@@ -9,16 +9,18 @@ namespace FastCgiNet
 			if ((arr[offset] >> 7) == 0)
 			{
 				// 1 byte long
-				if (length < 1)
-					throw new InsufficientBytesException();
+                if (length < 1)
+                    return -1;
+					//throw new InsufficientBytesException();
 
 				return arr[offset];
 			}
 			else
 			{
 				// 4 bytes long
-				if (length < 4)
-					throw new InsufficientBytesException();
+                if (length < 4)
+                    return -1;
+					//throw new InsufficientBytesException();
 
 				return ((arr[offset] & 0x7f) << 24) + (arr[offset + 1] << 16) + (arr[offset + 2] << 8) + arr[offset + 3];
 			}
@@ -31,12 +33,20 @@ namespace FastCgiNet
 
 			// Gets the lengths of the name and the value
 			int nameLength, valueLength, bytesRead;
-			try
-			{
+			//try
+			//{
 				nameLength = GetLengthFromByteArray(firstData, offset, length);
 				bytesRead = 0;
-				
-				if (nameLength > 0x7f)
+
+                if (nameLength == -1)
+                {
+
+                    endOfNvp = -1;
+                    createdNvp = null;
+                    return false;
+                
+                }
+                else if (nameLength > 0x7f)
 				{
 					bytesRead += 4;
 					valueLength = GetLengthFromByteArray(firstData, offset + 4, length - 4);
@@ -46,14 +56,25 @@ namespace FastCgiNet
 					bytesRead += 1;
 					valueLength = GetLengthFromByteArray(firstData, offset + 1, length - 1);
 				}
+
+
+                if (valueLength == -1)
+                {
+
+                    endOfNvp = -1;
+                    createdNvp = null;
+                    return false;
+
+                }
+
 				bytesRead += (valueLength > 0x7f) ? 4 : 1;
-			}
-			catch (InsufficientBytesException)
-			{
-				endOfNvp = -1;
-				createdNvp = null;
-				return false;
-			}
+			//}
+			//catch (InsufficientBytesException)
+			//{
+			//	endOfNvp = -1;
+			//	createdNvp = null;
+			//	return false;
+			//}
 
 			createdNvp = new NameValuePair(nameLength, valueLength);
 			

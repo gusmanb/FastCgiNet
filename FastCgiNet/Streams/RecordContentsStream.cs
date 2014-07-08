@@ -35,6 +35,7 @@ namespace FastCgiNet.Streams
 
 		public override void Flush()
 		{
+            MemoryBlocks.Clear();
 		}
 
 		public override int Read(byte[] buffer, int offset, int count)

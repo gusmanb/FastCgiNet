@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FastCgiNet.Streams;
+using System.Diagnostics;
 
 namespace FastCgiNet.Requests
 {
@@ -27,12 +28,33 @@ namespace FastCgiNet.Requests
         /// <returns>The records built with the newly received data.</returns>
         public IEnumerable<RecordBase> FeedBytes(byte[] data, int offset, int count)
         {
+            List<RecordBase> records = new List<RecordBase>();
+
             foreach (var rec in RecordFactory.Read(data, offset, count))
             {
                 AddReceivedRecord(rec);
-                yield return rec;
+                records.Add(rec);
+            }
+
+            return records;
+        }
+
+        /// <summary>
+        /// When data sent by the other side is received, feed it to this request using this method. This will append data to the streams
+        /// or set this request's properties. It is important that bytes are fed sequentially to this method.
+        /// </summary>
+        /// <param name="data">The array containing the received data.</param>
+        /// <param name="count">The number of bytes to be read from the <paramref name="data"/> array.</param>
+        /// <returns>The records built with the newly received data.</returns>
+        public void FeedBytes(byte[] data, int count)
+        {
+
+            foreach (var rec in RecordFactory.Read(data, 0, count))
+            {
+                AddReceivedRecord(rec);
             }
         }
+
 
         protected bool BeginRequestSent { get; private set; }
         protected bool EndRequestSent { get; private set; }

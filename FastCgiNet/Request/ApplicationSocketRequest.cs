@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using FastCgiNet.Streams;
+using System.Diagnostics;
 
 namespace FastCgiNet.Requests
 {
@@ -81,7 +82,7 @@ namespace FastCgiNet.Requests
             }
         }
         #endregion
-
+        
         protected override void AddReceivedRecord(RecordBase rec)
         {
             base.AddReceivedRecord(rec);
@@ -123,16 +124,18 @@ namespace FastCgiNet.Requests
         /// <exception cref="System.SocketException">If the Socket was prematurely closed by the other side or was in the process of being closed.</exception>
         protected virtual void CloseSocket()
         {
+
             if (Socket.Connected == false)
                 return;
 
-            Socket.Close();
+            Socket.Shutdown(SocketShutdown.Both);
+            Socket.Close(1);
         }
 
         public override void Dispose()
         {
             CloseSocket();
-            Socket.Dispose();
+            //Socket.Dispose();
             base.Dispose();
         }
 

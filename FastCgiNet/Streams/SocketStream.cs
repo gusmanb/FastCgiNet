@@ -2,6 +2,7 @@ using System;
 using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 
 namespace FastCgiNet.Streams
 {
@@ -20,8 +21,9 @@ namespace FastCgiNet.Streams
 
         private void Send(RecordBase rec)
         {
-            foreach (var seg in rec.GetBytes())
-                Socket.Send(seg.Array, seg.Offset, seg.Count, SocketFlags.None);
+
+            //Socket.BeginSend(rec.GetBytes().ToList(), SocketFlags.None, EndSend, null);
+            Socket.Send(rec.GetBytes().ToList());
         }
 
         /// <summary>
@@ -36,9 +38,11 @@ namespace FastCgiNet.Streams
             if (IsReadMode)
                 throw new InvalidOperationException("Can't flush a SocketStream that is in Read Mode");
 
-            IEnumerator<RecordContentsStream> it = UnderlyingStreams.GetEnumerator();
-            try
+            List<RecordContentsStream> streamsToRemove = new List<RecordContentsStream>();
+
+            using (IEnumerator<RecordContentsStream> it = UnderlyingStreams.GetEnumerator())
             {
+
                 // Move until the last flushed stream
                 if (LastFlushedStream != null)
                 {
@@ -60,16 +64,22 @@ namespace FastCgiNet.Streams
                     using (var record = (StreamRecordBase)RecordFactory.CreateRecord(RequestId, RecordType))
                     {
                         record.Contents = it.Current;
+                        streamsToRemove.Add(it.Current);
+                        Debug.Print("Flushing record of type " + RecordType.ToString() + " with len " + record.Contents.Length);
                         Send(record);
+
                     }
                 }
             }
-            catch
-            {
-                it.Dispose();
-                throw;
-            }
 
+            //Remove unnecessary data from memory
+            foreach (var v in streamsToRemove)
+                if (v != LastUnfilledStream)
+                    RemoveStream(v);
+
+            if (LastFlushedStream != null)
+                RemoveStream(LastFlushedStream);
+                
             // Internal bookkeeping
             LastFlushedStream = LastUnfilledStream;
             var newLastStream = new RecordContentsStream();

@@ -10,6 +10,11 @@ namespace FastCgiNet.Streams
         private long position;
 
         /// <summary>
+        /// Stores size of removed underliying streams
+        /// </summary>
+        protected long removedSize = 0;
+
+        /// <summary>
         /// When this stream is in Read Mode (see <see cref="IsReadMode"/>), this property can be used to find out if the other party has finished writing this stream.
         /// If this stream is not in Read Mode, this throws <seealso cref="System.InvalidOperationException"/>.
         /// </summary>
@@ -61,6 +66,21 @@ namespace FastCgiNet.Streams
 
             LastUnfilledStream = stream;
             underlyingStreams.AddLast(stream);
+        }
+
+        /// <summary>
+        /// This method is called internally when a record stream has been flushed and is not necessary any more to free it's resources
+        /// </summary>
+        /// <param name="Stream">Stream to remove</param>
+        public virtual void RemoveStream(RecordContentsStream Stream)
+        {
+
+            Stream.Flush();
+            underlyingStreams.Remove(Stream);
+            Stream.Close();
+            Stream.Dispose();
+            removedSize += Stream.Length;
+        
         }
 
         /// <summary>
@@ -180,7 +200,7 @@ namespace FastCgiNet.Streams
         {
 			get
             {
-				return underlyingStreams.Sum(s => s.Length);
+				return underlyingStreams.Sum(s => s.Length) + removedSize;
 			}
 		}
 		public override long Position

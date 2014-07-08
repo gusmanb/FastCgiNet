@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using FastCgiNet.Streams;
+using System.Linq;
 
 namespace FastCgiNet.Requests
 {
@@ -10,7 +11,7 @@ namespace FastCgiNet.Requests
 	/// </summary>
     public abstract class SocketRequest : FastCgiRequest
 	{
-		protected Socket Socket { get; private set; }
+		public Socket Socket { get; private set; }
 
         protected override void AddReceivedRecord(RecordBase rec)
         {
@@ -37,10 +38,23 @@ namespace FastCgiNet.Requests
 		{
             base.Send(rec);
 
+            Socket.Send(rec.GetBytes().ToList());
+            /*
+            foreach (var seg in rec.GetBytes())
+            {
+                if (seg.Offset != 0 || seg.Count != seg.Array.Length)
+                    seg.Array[0] = 0;
+
+               Socket.Send(seg.Array, seg.Offset, seg.Count, SocketFlags.None);
+            }
+
+            /*
+            
+
             foreach (var arrSegment in rec.GetBytes())
             {
                 Socket.Send(arrSegment.Array, arrSegment.Offset, arrSegment.Count, SocketFlags.None);
-            }
+            }*/
 		}
 
 		public SocketRequest(Socket s)
