@@ -2,93 +2,86 @@ using System;
 
 namespace FastCgiNet
 {
-	internal class NvpFactory
-	{
-		private static int GetLengthFromByteArray(byte[] arr, int offset, int length)
-		{
-			if ((arr[offset] >> 7) == 0)
-			{
-				// 1 byte long
+    internal class NvpFactory
+    {
+        private static int GetLengthFromByteArray(byte[] arr, int offset, int length)
+        {
+            if ((arr[offset] >> 7) == 0)
+            {
+                // 1 byte long
                 if (length < 1)
                     return -1;
-					//throw new InsufficientBytesException();
+                //throw new InsufficientBytesException();
 
-				return arr[offset];
-			}
-			else
-			{
-				// 4 bytes long
+                return arr[offset];
+            }
+            else
+            {
+                // 4 bytes long
                 if (length < 4)
                     return -1;
-					//throw new InsufficientBytesException();
+                //throw new InsufficientBytesException();
 
-				return ((arr[offset] & 0x7f) << 24) + (arr[offset + 1] << 16) + (arr[offset + 2] << 8) + arr[offset + 3];
-			}
-		}
+                return ((arr[offset] & 0x7f) << 24) + (arr[offset + 1] << 16) + (arr[offset + 2] << 8) + arr[offset + 3];
+            }
+        }
 
-		public static bool TryCreateNvp(byte[] firstData, int offset, int length, out NameValuePair createdNvp, out int endOfNvp)
-		{
-			if (ByteUtils.CheckArrayBounds(firstData, offset, length) == false)
-				throw new InvalidOperationException(""); //TODO: Descriptive message
+        public static bool TryCreateNvp(byte[] firstData, int offset, int length, out NameValuePair createdNvp, out int endOfNvp)
+        {
+            if (ByteUtils.CheckArrayBounds(firstData, offset, length) == false)
+                throw new InvalidOperationException(""); //TODO: Descriptive message
 
-			// Gets the lengths of the name and the value
-			int nameLength, valueLength, bytesRead;
-			//try
-			//{
-				nameLength = GetLengthFromByteArray(firstData, offset, length);
-				bytesRead = 0;
+            // Gets the lengths of the name and the value
+            int nameLength, valueLength, bytesRead;
 
-                if (nameLength == -1)
-                {
+            nameLength = GetLengthFromByteArray(firstData, offset, length);
+            bytesRead = 0;
 
-                    endOfNvp = -1;
-                    createdNvp = null;
-                    return false;
-                
-                }
-                else if (nameLength > 0x7f)
-				{
-					bytesRead += 4;
-					valueLength = GetLengthFromByteArray(firstData, offset + 4, length - 4);
-				}
-				else
-				{
-					bytesRead += 1;
-					valueLength = GetLengthFromByteArray(firstData, offset + 1, length - 1);
-				}
+            if (nameLength == -1)
+            {
+
+                endOfNvp = -1;
+                createdNvp = null;
+                return false;
+
+            }
+            else if (nameLength > 0x7f)
+            {
+                bytesRead += 4;
+                valueLength = GetLengthFromByteArray(firstData, offset + 4, length - 4);
+            }
+            else
+            {
+                bytesRead += 1;
+                valueLength = GetLengthFromByteArray(firstData, offset + 1, length - 1);
+            }
 
 
-                if (valueLength == -1)
-                {
+            if (valueLength == -1)
+            {
 
-                    endOfNvp = -1;
-                    createdNvp = null;
-                    return false;
+                endOfNvp = -1;
+                createdNvp = null;
+                return false;
 
-                }
+            }
 
-				bytesRead += (valueLength > 0x7f) ? 4 : 1;
-			//}
-			//catch (InsufficientBytesException)
-			//{
-			//	endOfNvp = -1;
-			//	createdNvp = null;
-			//	return false;
-			//}
+            bytesRead += (valueLength > 0x7f) ? 4 : 1;
 
-			createdNvp = new NameValuePair(nameLength, valueLength);
-			
-			// In case we got more than just the lengths, start defining the name and value
-			if (length > bytesRead)
-			{
-				createdNvp.FeedBytes(firstData, offset + bytesRead, length - bytesRead, out endOfNvp);
-			}
-			else
-			{
-				endOfNvp = -1;
-			}
 
-			return true;
-		}
-	}
+            createdNvp = new NameValuePair(nameLength, valueLength);
+
+            // In case we got more than just the lengths, start defining the name and value
+            if (length > bytesRead)
+            {
+                createdNvp.FeedBytes(firstData, offset + bytesRead, length - bytesRead, out endOfNvp);
+            }
+            else
+            {
+                endOfNvp = -1;
+            }
+
+            return true;
+        }
+    }
 }
