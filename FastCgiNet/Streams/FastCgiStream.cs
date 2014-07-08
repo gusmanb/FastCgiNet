@@ -5,8 +5,8 @@ using System.IO;
 
 namespace FastCgiNet.Streams
 {
-	public abstract class FastCgiStream : Stream
-	{
+    public abstract class FastCgiStream : Stream
+    {
         private long position;
 
         /// <summary>
@@ -45,12 +45,12 @@ namespace FastCgiNet.Streams
 
         protected LinkedList<RecordContentsStream> underlyingStreams;
         internal IEnumerable<RecordContentsStream> UnderlyingStreams
-		{
-			get
-			{
-				return underlyingStreams;
-			}
-		}
+        {
+            get
+            {
+                return underlyingStreams;
+            }
+        }
 
         /// <summary>
         /// This method is called internally when enough data has been written to this stream that a new <seealso cref="RecordContentsStream" /> must 
@@ -69,7 +69,7 @@ namespace FastCgiNet.Streams
         }
 
         /// <summary>
-        /// This method is called internally when a record stream has been flushed and is not necessary any more to free it's resources
+        /// This method is called internally when a record stream has been flushed and is not necessary any more, to free it's resources
         /// </summary>
         /// <param name="Stream">Stream to remove</param>
         public virtual void RemoveStream(RecordContentsStream Stream)
@@ -80,18 +80,18 @@ namespace FastCgiNet.Streams
             Stream.Close();
             Stream.Dispose();
             removedSize += Stream.Length;
-        
+
         }
 
         /// <summary>
-		/// The last unfilled stream that contains part of the stream's contents. If this RecordContentsStream has length zero, then this FastCgiStream
-		/// has never been written to.
-		/// </summary>
+        /// The last unfilled stream that contains part of the stream's contents. If this RecordContentsStream has length zero, then this FastCgiStream
+        /// has never been written to.
+        /// </summary>
         public RecordContentsStream LastUnfilledStream { get; set; }
-        
-		#region Implemented abstract members of Stream
+
+        #region Implemented abstract members of Stream
         public override int Read(byte[] buffer, int offset, int count)
-		{
+        {
             long bytesSkipped = 0;
             int totalBytesRead = 0;
             foreach (var stream in underlyingStreams)
@@ -102,19 +102,19 @@ namespace FastCgiNet.Streams
                     bytesSkipped += stream.Length;
                     continue;
                 }
-                
+
                 // If Read gets called more than once, we may be reading from an advanced stream, so rewind it.
                 // This is also necessary since an advanced stream may be added to this.
                 // We must, however, seek it back to its original position after reading from it
                 long streamInitialPos = stream.Position;
                 stream.Position = 0;
-                
+
                 // If this is the first stream, skip bytes that we don't want.
                 // We must read either up to "count" bytes or the entire current stream, whichever one is smaller.
                 int bytesToRead = count - totalBytesRead;
                 if (bytesToRead == 0)
                     break;
-                
+
                 if (totalBytesRead == 0)
                 {
                     stream.Seek(position - bytesSkipped, SeekOrigin.Begin);
@@ -123,110 +123,110 @@ namespace FastCgiNet.Streams
                 }
                 else if (bytesToRead > stream.Length)
                     bytesToRead = (int)stream.Length;
-                
+
                 totalBytesRead += stream.Read(buffer, offset + totalBytesRead, bytesToRead);
                 stream.Seek(streamInitialPos, SeekOrigin.Begin);
             }
-            
+
             position += totalBytesRead;
             return totalBytesRead;
-		}
-		public override long Seek(long offset, SeekOrigin origin)
-		{
+        }
+        public override long Seek(long offset, SeekOrigin origin)
+        {
             if (origin == SeekOrigin.Begin)
                 position = offset;
             else if (origin == SeekOrigin.Current)
                 position += offset;
             else
                 position = Length + offset;
-            
+
             return position;
-		}
-		public override void SetLength(long value)
-		{
-			throw new NotSupportedException();
-		}
-		public override void Write(byte[] buffer, int offset, int count)
-		{
+        }
+        public override void SetLength(long value)
+        {
+            throw new NotSupportedException();
+        }
+        public override void Write(byte[] buffer, int offset, int count)
+        {
             if (position != Length)
                 throw new NotImplementedException("Still only able to write to the end of the stream");
             else if (!CanWrite)
                 throw new InvalidOperationException("You can't write to this stream. You should either append a Record's Stream or initialize this stream with Read Mode = false");
 
-			int bytesCopied = 0;
-			while (bytesCopied != count)
-			{
-				int bytesToCopy = RecordBase.MaxContentLength - (int)LastUnfilledStream.Length;
-				if (bytesToCopy > count - bytesCopied)
-					bytesToCopy = count - bytesCopied;
+            int bytesCopied = 0;
+            while (bytesCopied != count)
+            {
+                int bytesToCopy = RecordBase.MaxContentLength - (int)LastUnfilledStream.Length;
+                if (bytesToCopy > count - bytesCopied)
+                    bytesToCopy = count - bytesCopied;
 
-				if (bytesToCopy > 0)
-				{
-					LastUnfilledStream.Write(buffer, offset + bytesCopied, bytesToCopy);
-					bytesCopied += bytesToCopy;
-				}
+                if (bytesToCopy > 0)
+                {
+                    LastUnfilledStream.Write(buffer, offset + bytesCopied, bytesToCopy);
+                    bytesCopied += bytesToCopy;
+                }
 
-				if (LastUnfilledStream.Length == RecordBase.MaxContentLength)
-				{
-					// New lastStream
+                if (LastUnfilledStream.Length == RecordBase.MaxContentLength)
+                {
+                    // New lastStream
                     AppendStream(new RecordContentsStream());
-				}
-			}
+                }
+            }
 
             position += count;
-		}
-		public override bool CanRead
+        }
+        public override bool CanRead
         {
-			get
+            get
             {
                 return true;
-			}
-		}
-		public override bool CanSeek
+            }
+        }
+        public override bool CanSeek
         {
-			get
+            get
             {
                 return true;
-			}
-		}
-		public override bool CanWrite
+            }
+        }
+        public override bool CanWrite
         {
-			get
+            get
             {
                 return !IsReadMode;
-			}
-		}
-		public override long Length
+            }
+        }
+        public override long Length
         {
-			get
+            get
             {
-				return underlyingStreams.Sum(s => s.Length) + removedSize;
-			}
-		}
-		public override long Position
+                return underlyingStreams.Sum(s => s.Length) + removedSize;
+            }
+        }
+        public override long Position
         {
-			get
+            get
             {
                 return position;
-			}
-			set
+            }
+            set
             {
-				Seek(value, SeekOrigin.Begin);
-			}
-		}
-		#endregion
+                Seek(value, SeekOrigin.Begin);
+            }
+        }
+        #endregion
 
         /// <summary>
         /// Creates a stream to be used in a FastCgi Request. If this stream will hold data received by the other party, then set <paramref name="readMode" /> to <c>true</c>.
         /// If you mean to write (send) data to the other communicating party, then set <paramref name="readMode"/> to <c>false</c>.
         /// </summary>
         /// <param name="readMode"><c>true</c> if you are using this stream to send data, <c>false</c> if you are receiving data.</param>
-		public FastCgiStream(bool readMode)
-		{
-			underlyingStreams = new LinkedList<RecordContentsStream>();
+        public FastCgiStream(bool readMode)
+        {
+            underlyingStreams = new LinkedList<RecordContentsStream>();
             AppendStream(new RecordContentsStream());
             position = 0;
             IsReadMode = readMode;
-		}
-	}
+        }
+    }
 }
