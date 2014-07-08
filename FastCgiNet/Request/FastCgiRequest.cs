@@ -5,13 +5,13 @@ using System.Diagnostics;
 
 namespace FastCgiNet.Requests
 {
-	/// <summary>
-	/// This class represents a FastCgi request. It serves as a common base class for real FastCgi requests running over a socket
+    /// <summary>
+    /// This class represents a FastCgi request. It serves as a common base class for real FastCgi requests running over a socket
     /// or a named pipe, or any other desired communication medium.
-	/// </summary>
-	public abstract class FastCgiRequest : IDisposable
-	{
-		public ushort RequestId { get; protected set; }
+    /// </summary>
+    public abstract class FastCgiRequest : IDisposable
+    {
+        public ushort RequestId { get; protected set; }
 
         /// <summary>
         /// This request's Record Factory.
@@ -132,7 +132,7 @@ namespace FastCgiNet.Requests
                     // Make sure we are not getting a BeginRequest once again, as this could be serious.
                     if (EndRequestReceived)
                         throw new InvalidOperationException("An EndRequest Record has already been received by this Request");
-                    
+
                     EndRequestReceived = true;
                     break;
 
@@ -151,23 +151,23 @@ namespace FastCgiNet.Requests
             }
         }
 
-		public override int GetHashCode()
-		{
-			// A request is uniquely identified by its requestid.
-			return RequestId;
-		}
+        public override int GetHashCode()
+        {
+            // A request is uniquely identified by its requestid.
+            return RequestId;
+        }
 
-		public override bool Equals(object obj)
-		{
-			if (obj == null)
-				return false;
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+                return false;
 
-			var b = obj as ApplicationSocketRequest;
-			if (b == null)
-				return false;
+            var b = obj as ApplicationSocketRequest;
+            if (b == null)
+                return false;
 
-			return b.RequestId.Equals(this.RequestId);
-		}
+            return b.RequestId.Equals(this.RequestId);
+        }
 
         public FastCgiRequest()
         {
@@ -177,5 +177,5 @@ namespace FastCgiNet.Requests
             EndRequestSent = false;
             EndRequestReceived = false;
         }
-	}
+    }
 }

@@ -6,45 +6,45 @@ using System.Diagnostics;
 
 namespace FastCgiNet.Requests
 {
-	/// <summary>
-	/// This class represents a FastCgi Request running over a socket, from the point of view of the FastCgi application (not the webserver). It provides easy ways to read data sent from the webserver
+    /// <summary>
+    /// This class represents a FastCgi Request running over a socket, from the point of view of the FastCgi application (not the webserver). It provides easy ways to read data sent from the webserver
     /// and to send data too.
-	/// </summary>
-	public class ApplicationSocketRequest : SocketRequest
-	{
+    /// </summary>
+    public class ApplicationSocketRequest : SocketRequest
+    {
         public Role Role { get; private set; }
         public bool ApplicationMustCloseConnection { get; private set; }
 
         #region Streams
         private SocketStream dataStream;
         public override FastCgiStream Data
-        { 
+        {
             get
             {
                 if (dataStream == null)
                 {
                     dataStream = new SocketStream(Socket, RecordType.FCGIData, true);
                 }
-                
+
                 return dataStream;
             }
         }
         private SocketStream paramsStream;
         public override FastCgiStream Params
-        { 
+        {
             get
             {
                 if (paramsStream == null)
                 {
                     paramsStream = new SocketStream(Socket, RecordType.FCGIParams, true);
                 }
-                
+
                 return paramsStream;
             }
         }
         private SocketStream stdin;
         public override FastCgiStream Stdin
-        { 
+        {
             get
             {
                 if (stdin == null)
@@ -57,32 +57,32 @@ namespace FastCgiNet.Requests
         }
         private SocketStream stdout;
         public override FastCgiStream Stdout
-        { 
+        {
             get
             {
                 if (stdout == null)
                 {
                     stdout = new SocketStream(Socket, RecordType.FCGIStdout, false);
                 }
-                
+
                 return stdout;
             }
         }
         private SocketStream stderr;
         public override FastCgiStream Stderr
-        { 
+        {
             get
             {
                 if (stderr == null)
                 {
                     stderr = new SocketStream(Socket, RecordType.FCGIStderr, false);
                 }
-                
+
                 return stderr;
             }
         }
         #endregion
-        
+
         protected override void AddReceivedRecord(RecordBase rec)
         {
             base.AddReceivedRecord(rec);
@@ -90,7 +90,7 @@ namespace FastCgiNet.Requests
             var beginRec = rec as BeginRequestRecord;
             if (beginRec != null)
             {
-                Role  = beginRec.Role;
+                Role = beginRec.Role;
                 ApplicationMustCloseConnection = beginRec.ApplicationMustCloseConnection;
             }
         }
@@ -139,17 +139,17 @@ namespace FastCgiNet.Requests
             base.Dispose();
         }
 
-		#region Constructors
-		public ApplicationSocketRequest(Socket s)
+        #region Constructors
+        public ApplicationSocketRequest(Socket s)
             : base(s)
-		{
-		}
+        {
+        }
 
-		public ApplicationSocketRequest(Socket s, BeginRequestRecord beginRequestRecord)
-			: this(s)
-		{
-			AddReceivedRecord(beginRequestRecord);
- 		}
-		#endregion
-	}
+        public ApplicationSocketRequest(Socket s, BeginRequestRecord beginRequestRecord)
+            : this(s)
+        {
+            AddReceivedRecord(beginRequestRecord);
+        }
+        #endregion
+    }
 }
