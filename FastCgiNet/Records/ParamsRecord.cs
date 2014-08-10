@@ -18,7 +18,7 @@ namespace FastCgiNet
 			{
 				return base.Contents;
 			}
-			set
+			internal set
 			{
 				base.Contents = value;
 			}
@@ -28,6 +28,9 @@ namespace FastCgiNet
 			: base(RecordType.FCGIParams,  requestId)
 		{
 		}
+
+        // TODO: There is no way to create secondary storage params records through the API. It doesn't make a whole lot of sense to me why
+        // someone would need this yet.. think about it later
 
 		internal ParamsRecord(byte[] data, int offset, int length, out int endOfRecord)
 			: base(RecordType.FCGIParams, data, offset, length, out endOfRecord)

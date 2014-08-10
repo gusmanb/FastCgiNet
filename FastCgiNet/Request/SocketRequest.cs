@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using FastCgiNet.Streams;
-using System.Linq;
 
 namespace FastCgiNet.Requests
 {
@@ -11,7 +10,7 @@ namespace FastCgiNet.Requests
     /// </summary>
     public abstract class SocketRequest : FastCgiRequest
     {
-        public Socket Socket { get; private set; }
+        protected Socket Socket { get; private set; }
 
         protected override void AddReceivedRecord(RecordBase rec)
         {
@@ -38,11 +37,31 @@ namespace FastCgiNet.Requests
         {
             base.Send(rec);
 
-            Socket.Send(rec.GetBytes().ToList());
-
+            foreach (var arrSegment in rec.GetBytes())
+            {
+                Socket.Send(arrSegment.Array, arrSegment.Offset, arrSegment.Count, SocketFlags.None);
+            }
         }
 
+        /// <summary>
+        /// Initializes a FastCgi Request whose communication medium is a socket. All records' contents are stored in memory up to 2kB. All other
+        /// data is stored in secondary storage.
+        /// </summary>
         public SocketRequest(Socket s)
+            : this(s, new RecordFactory())
+        {
+        }
+
+        /// <summary>
+        /// Builds a FastCgi Request whose communication medium is a socket.
+        /// The supplied <paramref name="recordFactory"/> is used to build the records that represent the incoming data.
+        /// </summary>
+        /// <param name="recordFactory">
+        /// The factory used to create records. This object's life cycle is controlled by this request.
+        /// That means that when this request is disposed, so will this record factory be.
+        /// </param>
+        public SocketRequest(Socket s, RecordFactory recordFactory)
+            : base(recordFactory)
         {
             if (s == null)
                 throw new ArgumentNullException("s");

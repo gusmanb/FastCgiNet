@@ -100,19 +100,6 @@ namespace FastCgiNet.Tests
 		}
 	
 		[Test]
-		public void TryToCreateRecordWithLessThanHeaderBytes()
-		{
-			Assert.Throws<ArgumentException>(() => {
-				byte[] data = new byte[7];
-				int endOfRecord;
-
-				using (var rec = new StdoutRecord(data, 0, data.Length, out endOfRecord))
-				{
-				}
-			});
-		}
-
-		[Test]
 		public void ReceiveEmptyRecord()
 		{
 			using (var rec = new StdinRecord(1))

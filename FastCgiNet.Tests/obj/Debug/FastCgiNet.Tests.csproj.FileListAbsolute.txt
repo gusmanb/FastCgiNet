@@ -1,0 +1,1 @@
+C:\FastCgiNet\FastCgiNet.Tests\obj\Debug\FastCgiNet.Tests.csprojResolveAssemblyReference.cache

@@ -14,25 +14,10 @@ namespace FastCgiNet
 		private int addedContentLength;
 		private int addedPaddingLength;
 
-		private RecordContentsStream contents;
 		/// <summary>
-		/// Use this stream to define what content will be in this record.
+        /// Use this stream to define what content will be in this record. After disposing of this Record, this stream will also be disposed of.
 		/// </summary>
-		/// <remarks>After disposing of this Record, this stream will also be disposed of.</remarks>
-		public virtual RecordContentsStream Contents
-		{
-			get
-			{
-				if (contents == null)
-					contents = new RecordContentsStream();
-
-				return contents;
-			}
-			set
-			{
-				contents = value;
-			}
-		}
+        public virtual RecordContentsStream Contents { get; internal set; }
 
 		/// <summary>
 		/// Whether this record contains any content at all. Empty Content records are used to end communication from one
@@ -54,30 +39,22 @@ namespace FastCgiNet
 		public override IEnumerable<ArraySegment<byte>> GetBytes()
         {
             int seekContentsBackTo = -1;
-            if (contents != null)
-            {
-                seekContentsBackTo = (int)contents.Position;
-                contents.Position = 0;
-            }
+            seekContentsBackTo = (int)Contents.Position;
+            Contents.Position = 0;
 
-			ContentLength = (ushort) (contents == null ? 0 : contents.Length);
+			ContentLength = (ushort) (Contents == null ? 0 : Contents.Length);
 			yield return CalculatePaddingAndGetHeaderBytes();
 
-			if (contents != null)
+			foreach (var buf in Contents.MemoryBlocks)
 			{
-				foreach (var buf in contents.MemoryBlocks)
-				{
-					yield return new ArraySegment<byte>(buf);
-				}
+                if (buf.Length > 0)
+				    yield return new ArraySegment<byte>(buf);
 			}
 
 			foreach (var segment in GetPaddingBytes())
 				yield return segment;
 
-			if (contents != null)
-            {
-                contents.Position = seekContentsBackTo;
-            }
+            Contents.Position = seekContentsBackTo;
 		}
 
 		/// <summary>
@@ -88,9 +65,6 @@ namespace FastCgiNet
 		internal override void FeedBytes(byte[] data, int offset, int length, out int lastByteOfRecord)
 		{
 			AssertArrayOperation(data, offset, length);
-
-			if (Contents == null)
-				Contents = new RecordContentsStream();
 
 			// Fill up the Content if we can
 			int contentNeeded = ContentLength - addedContentLength;
@@ -126,8 +100,7 @@ namespace FastCgiNet
 
 		public void Dispose()
 		{
-			if (contents != null)
-				contents.Dispose();
+			Contents.Dispose();
 		}
 
 		public override bool Equals(object obj)
@@ -147,20 +120,39 @@ namespace FastCgiNet
 			return Contents.GetHashCode();
 		}
 
+        /// <summary>
+        /// Base constructor that initializes this record's contents' stream to use memory.
+        /// </summary>
 		public StreamRecordBase(RecordType recordType, ushort requestId)
 			: base(recordType, requestId)
 		{
+            Contents = new RecordContentsStream();
 		}
 
-		internal StreamRecordBase(RecordType recordType, byte[] data, int offset, int length, out int endOfRecord)
-			: base(data, offset, length, recordType)
-		{
-			if (ContentLength + PaddingLength == 0)
-				endOfRecord = offset + 7;
-			else if (length > 8)
-				FeedBytes(data, offset + 8, length - 8, out endOfRecord);
-			else
-				endOfRecord = -1;
-		}
+        /// <summary>
+        /// Base constructor that initializes this record's contents' stream to use secondary storage. The life-cycle of the supplied
+        /// secondary storage stream has no relation with this record whatsoever.
+        /// </summary>
+        public StreamRecordBase(RecordType recordType, ushort requestId, Stream secondaryStorageStream)
+            : this(recordType, requestId)
+        {
+            if (secondaryStorageStream == null)
+                throw new ArgumentNullException("secondaryStorageOps");
+
+            Contents = new RecordContentsStream(secondaryStorageStream);
+        }
+
+        internal StreamRecordBase(RecordType recordType, byte[] data, int offset, int length, out int endOfRecord)
+            : base(data, offset, length, recordType)
+        {
+            Contents = new RecordContentsStream();
+
+            if (ContentLength + PaddingLength == 0)
+                endOfRecord = offset + 7;
+            else if (length > 8)
+                FeedBytes(data, offset + 8, length - 8, out endOfRecord);
+            else
+                endOfRecord = -1;
+        }
 	}
 }

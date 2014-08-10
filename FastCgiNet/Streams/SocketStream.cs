@@ -6,6 +6,9 @@ using System.Diagnostics;
 
 namespace FastCgiNet.Streams
 {
+    /// <summary>
+    /// Represents a FastCgi stream (e.g. Stdin, Stdout or Stderr) over a socket.
+    /// </summary>
     public class SocketStream : FastCgiStream, IDisposable
     {
         private Socket Socket;
@@ -13,7 +16,7 @@ namespace FastCgiNet.Streams
         /// <summary>
         /// Before flushing or closing this stream, make sure you set a proper RequestId through this field.
         /// </summary>
-        public ushort RequestId;
+        public ushort RequestId { get; set; }
 
         public readonly RecordType RecordType;
 

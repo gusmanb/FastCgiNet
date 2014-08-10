@@ -139,17 +139,37 @@ namespace FastCgiNet.Requests
             base.Dispose();
         }
 
-        #region Constructors
-        public ApplicationSocketRequest(Socket s)
+        /// <summary>
+        /// Initializes a FastCgi Request over a socket that represents the point of view of the application (not of the webserver).
+        /// All received records' contents' are stored in memory up to 2kB of data, all data that exceeds this limit is stored in secondary storage.
+        /// </summary>
+		public ApplicationSocketRequest(Socket s)
             : base(s)
-        {
-        }
+		{
+		}
 
-        public ApplicationSocketRequest(Socket s, BeginRequestRecord beginRequestRecord)
-            : this(s)
+        /// <summary>
+        /// Initializes a FastCgi Request over a socket that represents the point of view of the application (not of the webserver).
+        /// All received records' contents' are stored in memory up to 2kB of data, all data that exceeds this limit is stored in secondary storage.
+        /// </summary>
+		public ApplicationSocketRequest(Socket s, BeginRequestRecord beginRequestRecord)
+			: this(s)
+		{
+			AddReceivedRecord(beginRequestRecord);
+ 		}
+
+        /// <summary>
+        /// Initializes a FastCgi Request over a socket that represents the point of view of the application (not of the webserver).
+        /// The supplied <paramref name="recordFactory"/> is used to build the records that represent the incoming data.
+        /// </summary>
+        /// <param name="recordFactory">
+        /// The factory used to create records. This object's life cycle is controlled by this request.
+        /// That means that when this request is disposed, so will this record factory be.
+        /// </param>
+        public ApplicationSocketRequest(Socket s, RecordFactory recordFactory)
+            : base(s, recordFactory)
         {
-            AddReceivedRecord(beginRequestRecord);
         }
-        #endregion
-    }
+	}
+
 }
